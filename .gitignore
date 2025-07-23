@@ -1,0 +1,36 @@
+# Ignore service-level node_modules and dist/build
+**/node_modules/
+**/dist/
+**/build/
+
+# Ignore Docker-related stuff
+**/.docker/
+docker-compose.override.yml
+docker-compose*.log
+
+# Ignore environment variables
+**/.env
+**/.env.*
+
+# Logs
+**/logs
+**/*.log
+npm-debug.log*
+
+# OS Files
+.DS_Store
+Thumbs.db
+
+# Editors
+.vscode/
+.idea/
+*.swp
+
+# Prisma (if used)
+**/prisma/*.db
+**/prisma/*.db-journal
+**/.prisma/
+
+# Ignore coverage or test output
+**/coverage/
+**/test-results/

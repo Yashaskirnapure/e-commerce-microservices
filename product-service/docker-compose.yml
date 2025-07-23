@@ -1,0 +1,16 @@
+services:
+  product-db:
+    container_name: e-commerce-product-postgres
+    image: postgres:17.5
+    restart: always
+    ports:
+      - "5433:5432"
+    environment:
+      POSTGRES_USER: product_user
+      POSTGRES_PASSWORD: product_password
+      POSTGRES_DB: product_db
+    volumes:
+      - identity-db-data:/var/lib/postgresql/data
+
+volumes:
+  product-db-data:
