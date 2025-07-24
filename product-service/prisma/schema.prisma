@@ -6,10 +6,28 @@
 
 generator client {
   provider = "prisma-client-js"
-  output   = "../src/generated/prisma"
+  //output   = "../src/generated/prisma"
 }
 
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
+}
+
+model Product {
+  id          Int      @id @default(autoincrement())
+  name        String
+  description String
+  price       Float
+  sellerId    Int
+  images      String[]
+  category    String
+  status      ProductStatus @default(AVAILABLE)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+enum ProductStatus {
+  AVAILABLE
+  OUT_OF_STOCK
 }
