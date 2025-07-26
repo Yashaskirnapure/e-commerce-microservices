@@ -108,7 +108,11 @@ export async function getSellerProducts(req: express.Request, res: express.Respo
             orderBy: { createdAt: 'desc' },
         });
 
-        const validated = products.map((p) => productResponseSchema.parse(p));
+        const validated = products.map((p) => productResponseSchema.parse({
+            ...p,
+            createdAt: p.createdAt.toISOString(),
+            updatedAt: p.updatedAt.toISOString(),
+        }));
         res.status(200).json(validated);
     } catch (err: any) {
         console.error('GET_SELLER_PRODUCTS_ERROR', err);
