@@ -35,6 +35,8 @@ export async function createProduct(req: express.Request, res: express.Response)
 export async function updateProduct(req: express.Request, res: express.Response): Promise<void> {
     try {
         const productId = parseInt(req.params.id);
+        console.log(productId);
+
         const role = req.role;
         if(!role || role !== 'SELLER'){
             res.status(403).json({ message: "Forbidden", description: "Not authorized to access this route." });
@@ -55,7 +57,11 @@ export async function updateProduct(req: express.Request, res: express.Response)
             data,
         });
     
-        const validated = productResponseSchema.parse(updated);
+        const validated = productResponseSchema.parse({
+            ...updated,
+            createdAt: updated.createdAt.toISOString(),
+            updatedAt: updated.updatedAt.toISOString(),
+        });
         res.status(200).json(validated);
     }catch(err: any) {
         console.error('UPDATE_PRODUCT_ERROR', err);
