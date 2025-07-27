@@ -7,6 +7,9 @@ import { UpdateProductDTO, updateProductSchema } from '../dto/update.product';
 
 const prismaClient = new PrismaClient();
 
+
+// create product controller
+// /api/seller/create-product
 export async function createProduct(req: express.Request, res: express.Response): Promise<void>{
     try{
         const product: CreateProductDTO = createProductSchema.parse(req.body);
@@ -32,6 +35,9 @@ export async function createProduct(req: express.Request, res: express.Response)
     }
 }
 
+
+// update product controller
+// /api/seller/update-product
 export async function updateProduct(req: express.Request, res: express.Response): Promise<void> {
     try {
         const productId = parseInt(req.params.id);
@@ -69,6 +75,9 @@ export async function updateProduct(req: express.Request, res: express.Response)
     }
 }
 
+
+// delete product controller
+// /api/seller/delete
 export async function deleteProduct(req: express.Request, res: express.Response): Promise<void> {
     try {
         const productId = parseInt(req.params.id);
@@ -93,7 +102,10 @@ export async function deleteProduct(req: express.Request, res: express.Response)
         res.status(400).json({ error: err?.message || 'Failed to delete product' });
     }
 }
- 
+
+
+// get all products uploaded by seller
+// /api/seller/products
 export async function getSellerProducts(req: express.Request, res: express.Response): Promise<void> {
     try {
         const role = req.role;
