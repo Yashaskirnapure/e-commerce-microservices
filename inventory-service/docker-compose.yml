@@ -1,0 +1,16 @@
+services:
+  inventory-db:
+    container_name: e-commerce-inventory-postgres
+    image: postgres:17.5
+    restart: always
+    ports:
+      - "5443:5432"
+    environment:
+      POSTGRES_USER: inventory_user
+      POSTGRES_PASSWORD: inventory_password
+      POSTGRES_DB: inventory_db
+    volumes:
+      - inventory-db-data:/var/lib/postgresql/data
+
+volumes:
+  inventory-db-data:
