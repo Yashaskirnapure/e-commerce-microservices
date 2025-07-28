@@ -20,16 +20,14 @@ export async function getAllProducts(req: express.Request, res: express.Response
 			minPrice,
 			maxPrice,
 			sortBy = 'createdAt',
-			order = 'desc',
-			limit,
-			offset,
+			order = 'desc'
 		} = query;
 
 		const where: any = {
 			...(search && {
 			OR: [
-			{ name: { contains: search, mode: 'insensitive' } },
-			{ description: { contains: search, mode: 'insensitive' } },
+				{ name: { contains: search, mode: 'insensitive' } },
+				{ description: { contains: search, mode: 'insensitive' } },
 			],
 			}),
 			...(category && { category }),
@@ -39,13 +37,15 @@ export async function getAllProducts(req: express.Request, res: express.Response
 
 		const products = await prismaClient.product.findMany({
 			where,
-			take: limit,
-			skip: offset,
 			orderBy: { [sortBy]: order },
 		});
 
-		const validatedProducts: ProductResponseDTO[] = products.map((p) => productResponseSchema.parse(p));
-		res.status(200).json({ data: validatedProducts, count: validatedProducts.length });
+		const validated = products.map((p) => productResponseSchema.parse({
+            ...p,
+            createdAt: p.createdAt.toISOString(),
+            updatedAt: p.updatedAt.toISOString(),
+        }));
+		res.status(200).json({ data: validated, count: validated.length });
 	} catch (err: any) {
 		console.error('GET_ALL_PRODUCTS_ERROR', err);
 		res.status(400).json({ error: err?.message || 'Failed to fetch products' });

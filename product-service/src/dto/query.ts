@@ -6,9 +6,7 @@ export const querySchema = z.object({
     minPrice: z.coerce.number().min(0).optional(),
     maxPrice: z.coerce.number().min(0).optional(),
     sortBy: z.enum(['price', 'createdAt', 'name']).optional(),
-    order: z.enum(['asc', 'desc']).optional(),
-    limit: z.coerce.number().min(1).max(100).default(10),
-    offset: z.coerce.number().min(0).default(0),
+    order: z.enum(['asc', 'desc']).optional()
 });
 
 export type ProductQueryDTO = z.infer<typeof querySchema>;
