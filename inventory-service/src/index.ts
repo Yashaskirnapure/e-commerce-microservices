@@ -1,4 +1,5 @@
 import express, { Request, Response } from 'express';
+import inventoryRouter from './routers/inventory.router';
 import dotenv from 'dotenv';
 import morgan from 'morgan';
 dotenv.config();
@@ -7,6 +8,7 @@ const app = express();
 
 app.use(morgan('combined'));
 app.use(express.json());
+app.use('/api/inventory', inventoryRouter);
 app.use((err: any, req: Request, res: Response, next: Function) => {
     console.error(err.stack);
     res.status(500).json({ message: "Internal Server Error" });
