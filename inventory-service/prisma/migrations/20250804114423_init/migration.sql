@@ -1,7 +1,6 @@
 -- CreateTable
 CREATE TABLE "Inventory" (
     "productId" INTEGER NOT NULL,
-    "state" TEXT NOT NULL,
     "quantity" INTEGER NOT NULL DEFAULT 0,
     "reserved" INTEGER NOT NULL DEFAULT 0,
     "restockAt" TIMESTAMP(3),
@@ -10,4 +9,4 @@ CREATE TABLE "Inventory" (
 );
 
 -- CreateIndex
-CREATE UNIQUE INDEX "Inventory_productId_state_key" ON "Inventory"("productId", "state");
+CREATE UNIQUE INDEX "Inventory_productId_key" ON "Inventory"("productId");

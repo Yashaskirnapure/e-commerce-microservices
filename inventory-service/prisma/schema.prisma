@@ -16,12 +16,11 @@ datasource db {
 
 model Inventory {
   productId  Int
-  state      String   
   quantity   Int      @default(0)
   reserved   Int      @default(0)
   restockAt  DateTime?
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 
-  @@unique([productId, state])
+  @@unique(productId)
 }
