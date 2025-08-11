@@ -1,0 +1,32 @@
+{
+  "name": "e-commerce-node-microservice",
+  "version": "1.0.0",
+  "private": true,
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "tsc -b",
+    "start:auth": "npm --workspace=auth-service start",
+    "start:catalog": "npm --workspace=catalog-service start",
+    "start:inventory": "npm --workspace=inventory-service start",
+    "start:product": "npm --workspace=product-service start"
+  },
+  "workspaces": [
+    "auth-service",
+    "inventory-service",
+    "product-service",
+    "rabbitmq-helper"
+  ],
+  
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Yashaskirnapure/e-commerce-node-microservices.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Yashaskirnapure/e-commerce-node-microservices/issues"
+  },
+  "homepage": "https://github.com/Yashaskirnapure/e-commerce-node-microservices#readme",
+  "description": ""
+}
