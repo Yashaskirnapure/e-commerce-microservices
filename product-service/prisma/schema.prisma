@@ -22,7 +22,7 @@ model Product {
   sellerId    Int
   images      String[]
   category    String
-  status      ProductStatus @default(AVAILABLE)
+  status      ProductStatus @default(OUT_OF_STOCK)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 }
