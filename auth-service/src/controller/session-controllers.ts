@@ -60,14 +60,14 @@ export async function refreshToken(req: Request, res: Response): Promise<void> {
                 role: existingSession.user.role
             },
             process.env.JWT_SECRET!,
-            { expiresIn: '20m' }
+            { expiresIn: '1h' }
         );
 
         res.status(200).json({
             message: "Token refreshed successfully",
             accessToken,
             refreshToken: newRefreshToken,
-            expiresIn: '20m'
+            expiresIn: '1h'
         });
     } catch (err: any) {
         console.error("Refresh token error", err);
