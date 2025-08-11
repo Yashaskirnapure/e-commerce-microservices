@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
-import { PrismaClient } from '@prisma/client';
-import { privateDecrypt } from 'crypto';
+import { Prisma, PrismaClient } from '@prisma/client';
+import { InventoryItemDTO, inventoryItemSchema } from '../dto/inventory.item';
+import { StockEntryRequestDTO, stockEntryRequestSchema } from '../dto/stock.entry.request';
 
 const prismaClient = new PrismaClient();
 
@@ -9,170 +10,154 @@ export async function getStock(req: Request, res: Response): Promise<void> {
         const productId = parseInt(req.params.productId);
         const secret = req.body.secret;
 
-        if (secret !== process.env.CATALOG_SECRET) {
-            res.status(401).json({ error: 'Unauthorized' });
-            return;
-        }
+        if (!secret || secret !== process.env.CATALOG_SECRET) throw { status: 403, message: "Unauthorized request" };
+        if (isNaN(productId)) throw { status: 400,  message: "Invalid productId or quantity" };
 
-        if (isNaN(productId)) {
-            res.status(400).json({ error: 'Invalid productId' });
-            return;
-        }
+        const rawInventory = await prismaClient.inventory.findUnique({ where: { productId } });
+        if (!rawInventory) throw { status: 404, message: "Inventory not found" };
 
-        const inventory = await prismaClient.inventory.findUnique({
-            where: { productId },
-        });
-
-        if (!inventory) {
-            res.status(404).json({ error: 'Inventory not found' });
-            return;
-        }
-
-        res.status(200).json({ stock: inventory.stock });
+        const inventory: InventoryItemDTO = inventoryItemSchema.parse(rawInventory);
+        res.status(200).json({ stock: inventory.quantity });
     } catch (err: any) {
-        console.error('Error getting stock:', err);
-        res.status(500).json({ error: 'Internal server error' });
+        const status = err?.status || 500;
+        const message = err?.message || "Internal server error";
+
+        console.error("Error in reserveStock:", err);
+        res.status(status).json({ error: message });
     }
 }
 
 export async function reserveStock(req: Request, res: Response): Promise<void> {
     try {
-        const { productId, quantity, secret } = req.body;
+        const productId = parseInt(req.params.productId);
+        const { quantity, secret } = req.body;
 
-        if (!productId || typeof quantity !== "number" || quantity <= 0) {
-            res.status(400).json({ error: "Invalid productId or quantity" });
-            return;
-        }
+        if (!productId || typeof quantity !== "number" || quantity <= 0) throw { status: 400,  message: "Invalid productId or quantity" };
+        if (!secret || secret !== process.env.CATALOG_SECRET) throw { status: 403, message: "Unauthorized request" };
 
-        if (!secret || secret !== process.env.CATALOG_SECRET) {
-            res.status(403).json({ error: "Unauthorized request" });
-            return;
-        }
+        const result = await prismaClient.$transaction(async(tx: Prisma.TransactionClient) => {
+            const rawResult = await tx.$queryRaw`SELECT * FROM Inventory WHERE productId = ${productId} FOR UPDATE`;
 
-        const inventory = await prismaClient.inventory.findUnique({ where: { productId: productId } });
-        if (!inventory) {
-            res.status(404).json({ error: 'Inventory not found' });
-            return;
-        }
+            const inventory = rawResult as any[];
+            if (!inventory || inventory.length === 0) throw { status: 404, message: "Inventory not found" };
 
-        const available = inventory.quantity - inventory.reserved;
-        if (available < quantity) {
-            res.status(409).json({ error: "Insufficient stock" });
-            return;
-        }
+            const inv = inventory[0];
+            const available = inv.quantity - inv.reserved;
 
-        const result = await prismaClient.inventory.updateMany({
-            where: {
-                productId: productId,
-                reserved: { lte: inventory.reserved },
-                quantity: { gte: inventory.reserved + quantity }
-            },
-            data: {
-                reserved: { increment: quantity },
-            },
-        });
+            if (available < quantity) throw { status: 409, message: "Insufficient stock" };
 
-        if (result.count === 0) {
-            res.status(409).json({ error: "Failed to reserve stock due to concurrent update. Please retry." });
-            return;
-        }
+            await tx.inventory.update({
+                where: { productId },
+                data: {
+                    reserved: {
+                        increment: quantity,
+                    },
+                },
+            });
 
-        res.status(200).json({ message: "Stock reserved successfully" });
+            return "Stock reserved successfully";
+        })
+        res.status(200).json({ message: result });
     } catch (err: any) {
+        const status = err?.status || 500;
+        const message = err?.message || "Internal server error";
+
         console.error("Error in reserveStock:", err);
-        res.status(500).json({ error: "Internal server error" });
+        res.status(status).json({ error: message });
     }
 }
 
-export async function releaseStock(req: Request, res: Response): Promise<void> {
+export async function sellStock(req: Request, res: Response): Promise<void> {
     try {
-        const { productId, quantity, secret } = req.body;
+        const productId = parseInt(req.params.productId);
+        const { quantity, secret } = req.body;
 
-        if (!productId || typeof quantity !== "number" || quantity <= 0) {
-            res.status(400).json({ error: "Invalid productId or quantity" });
-            return;
-        }
+        if (!productId || typeof quantity !== "number" || quantity <= 0) throw { status: 400,  message: "Invalid productId or quantity" };
+        if (!secret || secret !== process.env.CATALOG_SECRET) throw { status: 403, message: "Unauthorized request" };
 
-        if (!secret || secret !== process.env.CATALOG_SECRET) {
-            res.status(403).json({ error: "Unauthorized request" });
-            return;
-        }
+        const result = await prismaClient.$transaction(async(tx: Prisma.TransactionClient) => {
+            const rawResult = await tx.$queryRaw`SELECT * FROM Inventory WHERE productId = ${productId} FOR UPDATE`;
 
-        const inventory = await prismaClient.inventory.findUnique({ where: { productId } });
-        if (!inventory) {
-            res.status(404).json({ error: 'Inventory not found' });
-            return;
-        }
+            const inventory = rawResult as any[];
+            if (!inventory || inventory.length === 0) throw { status: 404, message: "Inventory not found" };
 
-        if (inventory.reserved < quantity) {
-            res.status(409).json({ error: "Cannot release more than reserved stock" });
-            return;
-        }
+            const item: InventoryItemDTO = inventoryItemSchema.parse(inventory[0]);
+            if(item.reserved < quantity) throw { status: 409, message: "Not enough reserved stock" };
 
-        const result = await prismaClient.inventory.updateMany({
-            where: {
-                productId,
-                reserved: { gte: quantity }
-            },
-            data: {
-                reserved: { decrement: quantity }
-            }
+            await tx.inventory.update({
+                where: { productId },
+                data: {
+                    reserved: {
+                        decrement: quantity,
+                    },
+                },
+            });
+
+            return "Stock updated successfully";
         });
 
-        if (result.count === 0) {
-            res.status(409).json({ error: "Failed to release stock due to concurrent update. Please retry." });
-            return;
-        }
-
-        res.status(200).json({ message: "Stock released successfully" });
+        res.status(200).json({ message: result });
     } catch (err: any) {
-        console.error("Error in releaseStock:", err);
-        res.status(500).json({ error: "Internal server error" });
+        const status = err?.status || 500;
+        const message = err?.message || "Internal server error";
+
+        console.error("Error in reserveStock:", err);
+        res.status(status).json({ error: message });
     }
 }
 
 export async function replenishStock(req: Request, res: Response): Promise<void> {
     try {
-        const { secret, productId, quantity } = req.body;
+        const productId = parseInt(req.params.productId);
+        const { secret, quantity } = req.body;
 
-        if (!productId || typeof quantity !== "number" || quantity <= 0) {
-            res.status(400).json({ error: "Invalid productId or quantity" });
-            return;
-        }
+        if (!productId || typeof quantity !== "number" || quantity <= 0) throw { status: 400,  message: "Invalid productId or quantity" };
+        if (!secret || secret !== process.env.CATALOG_SECRET) throw { status: 403, message: "Unauthorized request" };
 
-        if (!secret || secret !== process.env.CATALOG_SECRET) {
-            res.status(403).json({ error: "Unauthorized request" });
-            return;
-        }
+        const result = await prismaClient.$transaction(async(tx: Prisma.TransactionClient) => {
+            const rawResult = await tx.$queryRaw`SELECT * FROM Inventory WHERE productId = ${productId} FOR UPDATE`;
 
-        const inventory = await prismaClient.inventory.findUnique({
-            where: { productId }
+            const inventory = rawResult as any[];
+            if (!inventory || inventory.length === 0) throw { status: 404, message: "Inventory not found" };
+
+            await tx.inventory.update({
+                where: { productId },
+                data: {
+                    quantity: {
+                        increment: quantity,
+                    },
+                },
+            });
         });
 
-        if (!inventory) {
-            res.status(404).json({ error: "Inventory not found" });
-            return;
-        }
-
-        const result = await prismaClient.inventory.updateMany({
-            where: {
-                productId: productId,
-                quantity: inventory.quantity
-            },
-            data: {
-                quantity: { increment: quantity }
-            }
-        });
-
-        if (result.count === 0) {
-            res.status(409).json({ error: "Conflict detected, please retry" });
-            return;
-        }
-
-        res.status(200).json({ message: "Stock replenished successfully" });
+        res.status(200).json({ message: result });
 
     } catch (err: any) {
-        console.error("Error in replenishStock:", err);
-        res.status(500).json({ error: "Internal server error" });
+        const status = err?.status || 500;
+        const message = err?.message || "Internal server error";
+
+        console.error("Error in reserveStock:", err);
+        res.status(status).json({ error: message });
+    }
+}
+
+export async function createStockEntry(req: Request, res: Response): Promise<void> {
+    try{
+        const { productId, quantity, secret } = req.body;
+        if (!productId || typeof quantity !== "number" || quantity <= 0) throw { status: 400,  message: "Invalid productId or quantity" };
+        if (!secret || secret !== process.env.CATALOG_SECRET) throw { status: 403, message: "Unauthorized request" };
+        
+        const upload = await prismaClient.inventory.create({
+            data: { productId: productId, quantity: quantity }
+        });
+
+        const validated = inventoryItemSchema.parse(upload);
+        res.status(201).json(validated);
+    }catch(err: any){
+        const status = err?.status || 500;
+        const message = err?.message || "Internal server error";
+
+        console.error("Error in reserveStock:", err);
+        res.status(status).json({ error: message });
     }
 }
