@@ -1,11 +1,10 @@
 import { Request, Response } from 'express';
 import jwt from 'jsonwebtoken';
 import dotenv from 'dotenv';
-import { PrismaClient } from '@prisma/client';
 import { v4 as uuidv4 } from 'uuid';
+import { prismaClient } from '../db/prisma.client';
 
 dotenv.config();
-const prismaClient = new PrismaClient();
 
 export async function refreshToken(req: Request, res: Response): Promise<void> {
     try {

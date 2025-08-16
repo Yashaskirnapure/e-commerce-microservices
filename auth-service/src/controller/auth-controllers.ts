@@ -2,11 +2,10 @@ import { Request, Response } from 'express';
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
 import dotenv from 'dotenv';
-import { PrismaClient } from '@prisma/client';
 import { v4 as uuidv4 } from 'uuid';
+import { prismaClient } from '../db/prisma.client';
 
 dotenv.config();
-const prismaClient = new PrismaClient();
 
 export async function register(req: Request, res: Response): Promise<void> {
     try{
@@ -79,7 +78,7 @@ export async function login(req: Request, res: Response): Promise<void> {
                 role: existingUser.role,
             },
             process.env.JWT_SECRET! as string,
-            { expiresIn: '20m' }
+            { expiresIn: '1h' }
         );
         const refreshToken = uuidv4();
         const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); 
@@ -98,7 +97,7 @@ export async function login(req: Request, res: Response): Promise<void> {
             message: "Login Successful",
             accessToken: accessToken,
             refreshToken: refreshToken,
-            expiresIn: '20m'
+            expiresIn: '1h'
         });
 
     }catch(err){
