@@ -47,15 +47,15 @@ export class RabbitMQHelper{
         const channel = this.ensureChannel();
         await channel.consume(queue, async (msg) => {
             if (msg) {
-                const content = JSON.parse(msg.content.toString());
                 try {
-                    await handler(content);
+                    await handler(msg);
                     channel.ack(msg);
                 } catch (error) {
                     console.error('[RabbitMQHelper] Consume handler error:', error);
+                    channel.nack(msg, false, true);
                 }
             }
-        });
+        }, { noAck: false });
     }
 
     public async close(): Promise<void> {
