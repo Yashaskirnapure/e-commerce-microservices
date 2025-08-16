@@ -1,0 +1,9 @@
+1. auth service
+2. product service
+3. inventory service
+
+
+TODO
+4. cart service
+5. order service
+6. product management service - seller
