@@ -1,9 +1,7 @@
 import { Request, Response } from 'express';
 import { Prisma, PrismaClient } from '@prisma/client';
 import { InventoryItemDTO, inventoryItemSchema } from '../dto/inventory.item';
-import { StockEntryRequestDTO, stockEntryRequestSchema } from '../dto/stock.entry.request';
-
-const prismaClient = new PrismaClient();
+import { prismaClient } from '../db/client';
 
 export async function getStock(req: Request, res: Response): Promise<void> {
     try {

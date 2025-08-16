@@ -1,12 +1,10 @@
 import * as express from 'express';
-import { PrismaClient } from '@prisma/client';
+import { prismaClient } from '../db/prisma.client';
+import { rabbitMQ } from '../rabbitmq/rabbitmq.helper';
 
 import { CreateProductDTO, createProductSchema } from '../dto/create.product';
 import { productResponseSchema } from '../dto/product.response';
 import { UpdateProductDTO, updateProductSchema } from '../dto/update.product';
-
-const prismaClient = new PrismaClient();
-
 
 // create product controller
 // /api/seller/create-product
@@ -19,8 +17,30 @@ export async function createProduct(req: express.Request, res: express.Response)
             return;
         }
         
-        const upload = await prismaClient.product.create({
-            data: { ...product, sellerId: req.userId! }
+        const quantity = req.body.quantity;
+        if(!quantity || typeof quantity !== 'number' || quantity < 0){
+            res.status(400).json({ message: "Invalid productId or quantity" });
+            return;
+        }
+        
+        const upload = await prismaClient.$transaction(async (tx) => {
+            const newUpload = await tx.product.create({
+                data: { ...product, sellerId: req.userId! }
+            });
+
+            try{
+                await rabbitMQ.publish('products_event', 'product.created', {
+                    productId: newUpload.id,
+                    quantity: quantity
+                });
+
+                console.log(`[createProduct] Published product.created event for productId: ${newUpload.id}`);
+            }catch(pubError: any){
+                console.error('[createProduct] Failed to publish product.created event', pubError);
+                throw pubError;
+            }
+
+            return newUpload;
         });
 
         const validated = productResponseSchema.parse({
