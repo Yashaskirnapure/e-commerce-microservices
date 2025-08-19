@@ -14,34 +14,27 @@ export async function productCreationHandler(message: ConsumeMessage) {
 
         const { productId, quantity } = data;
         const processedItem = await prismaClient.$transaction(async (tx) => {
-            let item = await tx.inventory.findFirst({ where: { productId } });
-
-            let isNew = false;
-            if (!item) {
-                item = await tx.inventory.create({ data: { productId, quantity } });
-                isNew = true;
-            }
+            const item = await tx.inventory.upsert({
+                where: { productId },
+                update: {},
+                create: { productId, quantity },
+            });
 
             const validated = inventoryItemSchema.parse(item);
-
-            try {
-                await rabbitMQ.publish("inventory_event", "stock.created", {
-                    productId: validated.productId,
-                    quantity: validated.quantity
-                });
-
-                if (isNew) {
-                    console.log(`[productCreationHandler] Stock item added for productId: ${validated.productId}`);
-                } else {
-                    console.log(`[productCreationHandler] Stock already exists for productId: ${validated.productId}, published event`);
-                }
-            } catch (pubError) {
-                console.error("[productCreationHandler] Failed to publish stock.created event", pubError);
-                throw pubError;
-            }
-
             return validated;
         });
+
+        try {
+            await rabbitMQ.publishWithRetry("inventory_event", "stock.created", {
+                productId: processedItem.productId,
+                quantity: processedItem.quantity
+            });
+
+            console.log(`[productCreationHandler] Stock item added for productId: ${processedItem.productId}`);
+        } catch (pubError) {
+            console.error("[productCreationHandler] Failed to publish stock.created event", pubError);
+            throw pubError;
+        }
 
         console.log(`[productCreationHandler] Inventory processing complete for productId: ${processedItem.productId}`);
     } catch (err: any) {

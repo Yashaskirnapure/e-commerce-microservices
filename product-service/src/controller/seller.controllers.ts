@@ -28,20 +28,20 @@ export async function createProduct(req: express.Request, res: express.Response)
                 data: { ...product, sellerId: req.userId! }
             });
 
-            try{
-                await rabbitMQ.publish('products_event', 'product.created', {
-                    productId: newUpload.id,
-                    quantity: quantity
-                });
-
-                console.log(`[createProduct] Published product.created event for productId: ${newUpload.id}`);
-            }catch(pubError: any){
-                console.error('[createProduct] Failed to publish product.created event', pubError);
-                throw pubError;
-            }
-
             return newUpload;
         });
+
+        try{
+            await rabbitMQ.publishWithRetry('products_event', 'product.created', {
+                productId: upload.id,
+                quantity: quantity
+            });
+
+            console.log(`[createProduct] Published product.created event for productId: ${upload.id}`);
+        }catch(pubError: any){
+            console.error('[createProduct] Failed to publish product.created event', pubError);
+            throw pubError;
+        }
 
         const validated = productResponseSchema.parse({
             ...upload,
@@ -61,7 +61,6 @@ export async function createProduct(req: express.Request, res: express.Response)
 export async function updateProduct(req: express.Request, res: express.Response): Promise<void> {
     try {
         const productId = parseInt(req.params.id);
-        console.log(productId);
 
         const role = req.role;
         if(!role || role !== 'SELLER'){

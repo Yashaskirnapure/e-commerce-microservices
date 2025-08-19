@@ -20,10 +20,7 @@ app.use((err: any, req: Request, res: Response, next: Function) => {
 async function startServer(){
     try{
         await rabbitMQ.connect();
-        console.log("RabbitMQ connected");
-
         await startListeners();
-        console.log("RabbitMQ Listeners started.");
 
         app.listen(3001, () => { console.log("Product service listening on port 3001") })
     }catch(err: any){
