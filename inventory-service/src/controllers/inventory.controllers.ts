@@ -148,8 +148,7 @@ export async function replenishStock(req: Request, res: Response): Promise<void>
         if(productEvent){
             try {
                 await rabbitMQ.publishWithRetry("inventory_event", "stock.replenish", {
-                    productId: result.productId,
-                    quantity: result.quantity
+                    productId: result.productId
                 });
 
                 console.log(`[replenishStock] Stock updated for productId: ${result.productId}, published event`);
@@ -162,6 +161,50 @@ export async function replenishStock(req: Request, res: Response): Promise<void>
         res.status(200).json(result);
 
     } catch (err: any) {
+        const status = err?.status || 500;
+        const message = err?.message || "Internal server error";
+
+        console.error("Error in reserveStock:", err);
+        res.status(status).json({ error: message });
+    }
+}
+
+export async function releaseStock(req: Request, res: Response): Promise<void>{
+    try{
+        const productId = parseInt(req.params.id);
+        const { quantity } = req.body;
+
+        let event: boolean = false;
+        const result = await prismaClient.$transaction(async(tx: Prisma.TransactionClient) => {
+            const item = await prismaClient.$queryRaw`SELECT * FROM "Inventory" WHERE "productId" = ${productId} FOR UPDATE`;
+
+            const inventory = item as any[];
+            if(!inventory || inventory.length === 0) throw { status: 400,  message: "Invalid productId or quantity" };
+
+            if(inventory[0].quantity == inventory[0].reserved) event = true;
+            const updatedItem = await prismaClient.inventory.update({
+                where: { productId: productId },
+                data: { 
+                    reserved: { decrement: quantity }
+                }
+            });
+
+            return updatedItem;
+        });
+
+        try {
+            await rabbitMQ.publishWithRetry("inventory_event", "stock.replenish", {
+                productId: result.productId
+            });
+
+            console.log(`[replenishStock] Stock updated for productId: ${result.productId}, published event`);
+        } catch (pubError) {
+            console.error("[replenishStock] Failed to publish stock.replenish event", pubError);
+            throw pubError;
+        }
+
+        res.status(201).json(result);
+    }catch(err: any){
         const status = err?.status || 500;
         const message = err?.message || "Internal server error";
 
