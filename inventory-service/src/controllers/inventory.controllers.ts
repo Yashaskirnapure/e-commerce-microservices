@@ -176,13 +176,14 @@ export async function releaseStock(req: Request, res: Response): Promise<void>{
 
         let event: boolean = false;
         const result = await prismaClient.$transaction(async(tx: Prisma.TransactionClient) => {
-            const item = await prismaClient.$queryRaw`SELECT * FROM "Inventory" WHERE "productId" = ${productId} FOR UPDATE`;
+            const item = await tx.$queryRaw`SELECT * FROM "Inventory" WHERE "productId" = ${productId} FOR UPDATE`;
 
             const inventory = item as any[];
             if(!inventory || inventory.length === 0) throw { status: 400,  message: "Invalid productId or quantity" };
+            if (inventory[0].reserved < quantity) throw { status: 400, message: "Cannot release more than reserved" };
 
             if(inventory[0].quantity == inventory[0].reserved) event = true;
-            const updatedItem = await prismaClient.inventory.update({
+            const updatedItem = await tx.inventory.update({
                 where: { productId: productId },
                 data: { 
                     reserved: { decrement: quantity }
