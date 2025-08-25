@@ -1,10 +1,10 @@
 import { Request, Response } from 'express';
 import jwt from 'jsonwebtoken';
-import dotenv from 'dotenv';
+import fs from 'fs';
 import { v4 as uuidv4 } from 'uuid';
 import { prismaClient } from '../db/prisma.client';
 
-dotenv.config();
+const privateKey = fs.readFileSync(process.env.JWT_PRIVATE_KEY_PATH as string);
 
 export async function refreshToken(req: Request, res: Response): Promise<void> {
     try {
@@ -58,7 +58,7 @@ export async function refreshToken(req: Request, res: Response): Promise<void> {
                 userId: existingSession.userId,
                 role: existingSession.user.role
             },
-            process.env.JWT_SECRET!,
+            privateKey,
             { expiresIn: '1h' }
         );
 

@@ -4,20 +4,16 @@ import bcrypt from 'bcryptjs';
 import dotenv from 'dotenv';
 import { v4 as uuidv4 } from 'uuid';
 import { prismaClient } from '../db/prisma.client';
+import fs from 'fs';
 
 dotenv.config();
+const privateKey = fs.readFileSync(process.env.JWT_PRIVATE_KEY_PATH as string);
 
 export async function register(req: Request, res: Response): Promise<void> {
     try{
         const { name, email, password, role } = req.body;
         if(!name || !password || !email || !role){
             res.status(400).json({ message: "Bad Request", description: "Please provide all fields." });
-            return;
-        }
-
-        const exisitingUser = await prismaClient.user.findUnique({ where: { email }});
-        if(exisitingUser){
-            res.status(409).json({ message: "Bad Request", description: "Email already registered." });
             return;
         }
 
@@ -41,7 +37,7 @@ export async function login(req: Request, res: Response): Promise<void> {
     try{
         const { email, password } = req.body;
         if(!email || !password){
-            res.status(401).json({ message: "Bad Request", description: "Provide all fields." });
+            res.status(400).json({ message: "Bad Request", description: "Provide all fields." });
             return;
         }
 
@@ -57,27 +53,12 @@ export async function login(req: Request, res: Response): Promise<void> {
             return;
         }
 
-        const existingSessions = await prismaClient.session.findMany({
-            where: {
-                userId: existingUser.id,
-                expiresAt: { gt: new Date() }
-            }
-        });
-
-        if (existingSessions.length >= 3) {
-            res.status(403).json({
-                message: "Forbidden", 
-                description: "Session limit reached. Please logout from another device to continue."
-            });
-            return;
-        }
-
         const accessToken = jwt.sign(
             {
                 userId: existingUser.id,
                 role: existingUser.role,
             },
-            process.env.JWT_SECRET! as string,
+            privateKey,
             { expiresIn: '1h' }
         );
         const refreshToken = uuidv4();
