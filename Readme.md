@@ -10,4 +10,16 @@ Built with **Node.js** and **TypeScript**, containerized with **Docker**, and po
 - **Docker** + **Docker Compose** — Containerization and orchestration
 
 ## Architecture Diagram (till now)
-![Architecture Diagram](diagrams/WIP_diagram_v1.png)
+![Architecture Diagram](diagrams/WIP_diagram_v2.png)
+
+## Services implemented -
+| Service Name        | Responsibility / Functionality                     |
+|--------------------|----------------------------------------------------|
+| **Auth Service**    | Manage users, authentication, and sessions       |
+| **Product Service** | Store product information and availability       |
+| **Inventory Service** | Manage available and reserved stock of products |
+
+
+## Services planned -
+#### 1. Cart Service
+#### 2. Order Service
