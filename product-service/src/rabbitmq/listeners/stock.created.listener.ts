@@ -16,6 +16,7 @@ export async function stockCreationHandler(message: ConsumeMessage){
         });
 
         console.log(`[stockCreationHandler] Inventory processing complete for productId: ${product.id}`);
+        console.log(`Product available with product ID ${productId}`);
     }catch(err){
         console.error("[stockCreationHandler] Error handling stock.created event:", err);
     }

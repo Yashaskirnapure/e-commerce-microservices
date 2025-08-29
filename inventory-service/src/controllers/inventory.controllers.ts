@@ -100,6 +100,9 @@ export async function sellStock(req: Request, res: Response): Promise<void> {
                     reserved: {
                         decrement: quantity,
                     },
+                    quantity: {
+                        decrement: quantity,
+                    }
                 },
             });
 
@@ -171,7 +174,7 @@ export async function replenishStock(req: Request, res: Response): Promise<void>
 
 export async function releaseStock(req: Request, res: Response): Promise<void>{
     try{
-        const productId = parseInt(req.params.id);
+        const productId = parseInt(req.params.productId);
         const { quantity } = req.body;
 
         let event: boolean = false;
