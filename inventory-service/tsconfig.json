@@ -9,7 +9,12 @@
     "forceConsistentCasingInFileNames": true,
     "skipLibCheck": true,
     "typeRoots": ["../types", "./node_modules/@types"],
-    "composite": true
+    "composite": true,
+    "baseUrl": ".",
+    "moduleResolution": "node"
   },
-  "include": ["src"]
+  "include": ["src/**/*", "../types/**/*"],
+  "references": [
+    { "path": ".." }
+  ]
 }

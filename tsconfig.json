@@ -8,13 +8,17 @@
     "composite": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
-    "moduleResolution": "node"
+    "moduleResolution": "node",
+    "declaration": true,
+    "declarationMap": true,
+    "esModuleInterop": true
   },
   "include": ["types/**/*"],
+  "exclude": ["node_modules", "**/dist", "**/build"],
   "references": [
-    { "path": "auth-service" },
-    { "path": "inventory-service" },
-    { "path": "product-service" },
-    { "path": "api-gateway" }
+    { "path": "./auth-service" },
+    { "path": "./inventory-service" },
+    { "path": "./product-service" },
+    { "path": "./api-gateway" }
   ]
 }

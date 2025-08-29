@@ -12,12 +12,12 @@
     "start:product": "npm --workspace=product-service start"
   },
   "workspaces": [
+    "api-gateway",
     "auth-service",
     "inventory-service",
     "product-service",
     "rabbitmq-helper"
   ],
-  
   "repository": {
     "type": "git",
     "url": "git+https://github.com/Yashaskirnapure/e-commerce-node-microservices.git"
@@ -28,5 +28,11 @@
     "url": "https://github.com/Yashaskirnapure/e-commerce-node-microservices/issues"
   },
   "homepage": "https://github.com/Yashaskirnapure/e-commerce-node-microservices#readme",
-  "description": ""
+  "description": "",
+  "dependencies": {
+    "morgan": "^1.10.1"
+  },
+  "devDependencies": {
+    "@types/morgan": "^1.9.10"
+  }
 }
