@@ -2,6 +2,7 @@
 **/node_modules/
 **/dist/
 **/build/
+**/*.tsbuildinfo
 
 # Ignore Docker-related stuff
 **/.docker/
@@ -34,3 +35,6 @@ Thumbs.db
 # Ignore coverage or test output
 **/coverage/
 **/test-results/
+
+# Ignore keys pair files
+**/keys
