@@ -2,6 +2,9 @@ import express, { Request, Response } from 'express';
 import authRouter from './route/auth-route';
 import sessionRouter from './route/session-route';
 import morgan from 'morgan';
+import dotenv from 'dotenv';
+
+dotenv.config();
 
 const app = express();
 app.use(morgan('combined'));

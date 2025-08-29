@@ -59,7 +59,7 @@ export async function login(req: Request, res: Response): Promise<void> {
                 role: existingUser.role,
             },
             privateKey,
-            { expiresIn: '1h' }
+            { expiresIn: '1h', algorithm: 'RS256' }
         );
         const refreshToken = uuidv4();
         const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); 

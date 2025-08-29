@@ -59,7 +59,7 @@ export async function refreshToken(req: Request, res: Response): Promise<void> {
                 role: existingSession.user.role
             },
             privateKey,
-            { expiresIn: '1h' }
+            { expiresIn: '1h', algorithm: 'RS256' }
         );
 
         res.status(200).json({
