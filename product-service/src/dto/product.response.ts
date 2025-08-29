@@ -6,8 +6,6 @@ export const productResponseSchema = z.object({
 	description: z.string(),
 	price: z.number(),
 	images: z.array(z.string()).optional(),
-	createdAt: z.string(),
-	updatedAt: z.string(),
 });
 
 export type ProductResponseDTO = z.infer<typeof productResponseSchema>;
